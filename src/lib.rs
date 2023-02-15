@@ -48,11 +48,26 @@ impl Canvas {
     /// Note that the `Canvas` can still draw outside the given dimensions (expanding the canvas)
     /// if a pixel is set outside the dimensions.
     pub fn new(width: u32, height: u32) -> Canvas {
+        let width_adjustment: u16 = if width != 0 && width % 2 == 0 { 0 } else { 1 };
+        let height_adjustment: u16 = if height != 0 && height % 4 == 0 { 0 } else { 1 };
         Canvas {
             chars: FnvHashMap::default(),
-            width: (width / 2) as u16,
-            height: (height / 4) as u16,
+            width: (width / 2) as u16 + width_adjustment,
+            height: (height / 4) as u16 + height_adjustment,
         }
+    }
+
+    /// Checks if the given `row` and `col` u16 values are larger than the `width` and `height` member fields.
+    /// 
+    /// Sets the `width` and `height` member fields if the given values were out of bounds.
+    fn check_bounds(&mut self, row: u16, col: u16) {
+        if self.width < row + 1 {
+            self.width = row + 1;
+        }
+        if self.height < col + 1 {
+            self.height = col + 1;
+        }
+    }
     }
 
     /// Clears the canvas.
@@ -63,6 +78,7 @@ impl Canvas {
     /// Sets a pixel at the specified coordinates.
     pub fn set(&mut self, x: u32, y: u32) {
         let (row, col) = ((x / 2) as u16, (y / 4) as u16);
+        self.check_bounds(row, col);
         let a = self
             .chars
             .entry((row, col))
@@ -77,6 +93,7 @@ impl Canvas {
     /// specifying the color of the braille char 
     pub fn set_colored(&mut self, x: u32, y: u32, color: PixelColor) {
         let (row, col) = ((x / 2) as u16, (y / 4) as u16);
+        self.check_bounds(row, col);
         let a = self
             .chars
             .entry((row, col))
@@ -90,6 +107,7 @@ impl Canvas {
     /// Sets a letter at the specified coordinates.
     pub fn set_char(&mut self, x: u32, y: u32, c: char) {
         let (row, col) = ((x / 2) as u16, (y / 4) as u16);
+        self.check_bounds(row, col);
         let a = self
             .chars
             .entry((row, col))
@@ -114,6 +132,7 @@ impl Canvas {
     /// Deletes a pixel at the specified coordinates.
     pub fn unset(&mut self, x: u32, y: u32) {
         let (row, col) = ((x / 2) as u16, (y / 4) as u16);
+        self.check_bounds(row, col);
         let a = self
             .chars
             .entry((row, col))
@@ -124,6 +143,7 @@ impl Canvas {
     /// Toggles a pixel at the specified coordinates.
     pub fn toggle(&mut self, x: u32, y: u32) {
         let (row, col) = ((x / 2) as u16, (y / 4) as u16);
+        self.check_bounds(row, col);
         let a = self
             .chars
             .entry((row, col))
@@ -145,21 +165,13 @@ impl Canvas {
     /// Note that each row is actually four pixels high due to the fact that a single Braille
     /// character spans two by four pixels.
     pub fn rows(&self) -> Vec<String> {
-        let mut maxrow = if self.width > 0 { self.width - 1 } else { 0 };
-        let mut maxcol = if self.height > 0 { self.height - 1 } else { 0 };
-        for &(x, y) in self.chars.keys() {
-            if x > maxrow {
-                maxrow = x;
-            }
-            if y > maxcol {
-                maxcol = y;
-            }
-        }
+        let maxrow = self.width;
+        let maxcol = self.height;
 
         let mut result = Vec::with_capacity(maxcol as usize + 1);
-        for y in 0..=maxcol {
+        for y in 0..maxcol {
             let mut row = String::with_capacity(maxrow as usize + 1);
-            for x in 0..=maxrow {
+            for x in 0..maxrow {
                 let cell =
                     self.chars
                         .get(&(x, y))
