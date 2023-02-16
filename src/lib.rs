@@ -16,9 +16,9 @@
 //!     canvas.set(5, 4);
 //!     canvas.line(2, 2, 8, 8);
 //!     assert_eq!(canvas.frame(), [
-//! " ⢄    ",
-//! "  ⠙⢄  ",
-//! "    ⠁ "].join("\n"));
+//! " ⢄   ",
+//! "  ⠙⢄ ",
+//! "    ⠁"].join("\n"));
 //! }
 //! ```
 use std::char;
@@ -67,7 +67,6 @@ impl Canvas {
         if self.height < col + 1 {
             self.height = col + 1;
         }
-    }
     }
 
     /// Clears the canvas.
